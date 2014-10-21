@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="jquery-1.11.0.min.js"></script>
+
+	<script>
+	
+	$(document).ready(function(){
+		
+		var socket = io.connect();
+
+		socket.on("sync", function(sync) {
+			$("#area").val(sync);
+		});
+
+		$("#area").keyup(function(e){
+			var sync = $("#area").val();
+			socket.emit("sync", sync);
+		});
+
+		function progressHandlingFunction(e){
+      if(e.lengthComputable){
+        $('progress').attr({value:e.loaded,max:e.total});
+      }
+    }
+
+		$("form").submit(function(e) {
+	    e.preventDefault();
+	    var formData = new FormData($('form')[0]);
+		  $.ajax({
+        url: 'upload',  //Server script to process data
+        type: 'POST',
+        xhr: function() {  // Custom XMLHttpRequest
+            var myXhr = $.ajaxSettings.xhr();
+            if(myXhr.upload){ // Check if upload property exists
+                myXhr.upload.addEventListener('progress',progressHandlingFunction, false); // For handling the progress of the upload
+            }
+            return myXhr;
+        },
+        //Ajax events
+        beforeSend: function(res) { 
+        	// console.log(e)
+        },
+        success: function(res) {
+        	console.log(res);
+        	$("#feed").append("<a href='" + res.new + "'>" + res.old + "</a>");
+        },
+        error: function(res) {
+        	// console.log(e)
+        },
+        // Form data
+        data: formData,
+        //Options to tell jQuery not to process data or worry about content-type.
+        cache: false,
+        contentType: false,
+        processData: false
+    });
+	});
+
+});
+</script>
+</head>
+<body>
+
+
+<div class="chatbox">
+	<div id="feed">
+	</div>
+	<input type="text" id="textfield" />
+</div>
+
+<form style="display: block;" method='post' action='upload' enctype="multipart/form-data">
+  <input type='file' name='file'>
+	<input type="submit" />
+</form>
+
+
+	<center>
+<textarea id="area" rows="30" cols="80">
+
+</textarea>
+
+</center>
+<br>
+
+	<logo> Syncing by Mapfap </logo>
+
+</body>
+<style>
+
+	body {
+		background: #e2e2e2;
+		padding: 20px;
+		font-family: Verdana;
+	}
+
+	logo {
+		font-size: 20px;
+		color: #ffffff;
+		padding: 30px;
+		margin-top: 60px;
+		display: block;
+		text-align: right;
+	}
+
+	#area {
+		border: none;
+		box-shadow: 0px 0px 10px #4c4c4c;
+		font-size: 18px;
+		padding: 30px;
+		padding-top: 50px;
+	}
+
+	.chatbox {
+		width: 300px;
+		border: 1px solid black;
+		position: fixed;
+		bottom: 30px;
+		right: 30px;
+		min-height: 100px;
+	}
+
+
+</style>
+</html>
