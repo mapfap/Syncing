@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+	<link href="css/bootstrap.min.css" rel="stylesheet">
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="jquery-1.11.0.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
 
 	<script>
 	
@@ -14,27 +16,50 @@
 			$("#area").val(sync);
 		});
 
-		$("#area").keyup(function(e){
+		socket.on("chat", function(msg, type) {
+			
+			if (type == "a") {
+				var filename = JSON.parse(msg)
+				$("#feed").append("<li><span class='glyphicon glyphicon-link'> </span> <a href='" + filename.new + "'>" + filename.old + "</a></li><br>");
+			} else {
+				$("#feed").append("<li>" + msg + "</li><br>");
+			}
+      var scrol_pos = $("#feed").scrollTop();
+      $("#feed").scrollTop(scrol_pos + 1000);
+		});
+
+		$("#area").keyup(function(e) {
 			var sync = $("#area").val();
 			socket.emit("sync", sync);
 		});
 
+		$("#chattext").keyup(function(e) {
+			if (e.keyCode == 13) {
+				socket.emit("chat", $("#chattext").val());
+				$("#chattext").val("");
+			}
+		});
+
+		$("#chat").click(function(e) {
+			socket.emit("chat", $("#chattext").val());
+			$("#chattext").val("");
+		});
+
 		function progressHandlingFunction(e){
-      if(e.lengthComputable){
-        $('progress').attr({value:e.loaded,max:e.total});
+      if (e.lengthComputable) {
+        $("progress").attr({value: e.loaded, max: e.total });
       }
     }
 
-		$("form").submit(function(e) {
-	    e.preventDefault();
-	    var formData = new FormData($('form')[0]);
+    function postFile() {
+    	  var formData = new FormData($('form')[0]);
 		  $.ajax({
-        url: 'upload',  //Server script to process data
-        type: 'POST',
+        url: "upload",  //Server script to process data
+        type: "POST",
         xhr: function() {  // Custom XMLHttpRequest
             var myXhr = $.ajaxSettings.xhr();
-            if(myXhr.upload){ // Check if upload property exists
-                myXhr.upload.addEventListener('progress',progressHandlingFunction, false); // For handling the progress of the upload
+            if (myXhr.upload) { // Check if upload property exists
+                myXhr.upload.addEventListener("progress", progressHandlingFunction, false); // For handling the progress of the upload
             }
             return myXhr;
         },
@@ -44,7 +69,6 @@
         },
         success: function(res) {
         	console.log(res);
-        	$("#feed").append("<a href='" + res.new + "'>" + res.old + "</a>");
         },
         error: function(res) {
         	// console.log(e)
@@ -56,36 +80,63 @@
         contentType: false,
         processData: false
     });
-	});
+    }
+
+    $("#file").change(function () {
+	    if ($("#file").val() == "") {
+        return;
+	    }
+
+	    postFile();
+
+		  $("#file").val("");
+	  });
+
+
+
+	// 	$("form").submit(function(e) {
+	//     e.preventDefault();
+	  
+	// });
 
 });
 </script>
 </head>
 <body>
-
-
-<div class="chatbox">
-	<div id="feed">
-	</div>
-	<input type="text" id="textfield" />
-</div>
-
-<form style="display: block;" method='post' action='upload' enctype="multipart/form-data">
-  <input type='file' name='file'>
-	<input type="submit" />
-</form>
-
-
+	<div class="xcontainer">
+	<span class="glyphicon glyphicon-user"></span>&nbsp;&nbsp;
+	<span class="glyphicon glyphicon-eye-open"></span><br><br>
+	<progress value="0" max="100"></progress>
 	<center>
-<textarea id="area" rows="30" cols="80">
+		<textarea id="area" rows="8" cols="60"></textarea>
+	</center>
+		<div class="chatbox">
+		<ul id="feed">
+		</ul>
+		<!-- <input type="text" id="textfield" /> -->
+		<div class="row chattext-wrapper">
+	  <div class="col-lg-12">
+	    <div class="input-group">
+	      <input id="chattext" type="text" class="form-control">
+	      <span class="input-group-btn">
+	      	
+	      	<form method='post' action='upload' enctype="multipart/form-data">
+	        	<button type="submit" class="btn btn-file btn-success">
+	        		<span class="glyphicon glyphicon-file">
+	        			<input id="file" type='file' name='file' />
+	        		</span>
+	        	</button>
+	        </form>
 
-</textarea>
+	        <button id="chat" class="btn btn-primary" type="button"><span class="glyphicon glyphicon-comment"></span></button>
+	      </span>
+	    </div><!-- /input-group -->
+	    </div><!-- /.col-lg-6 -->
+		</div><!-- /.row -->
+	</div>
 
-</center>
-<br>
-
-	<logo> Syncing by Mapfap </logo>
-
+	<logo> <h1>Syncing</h1> by Mapfap </logo>
+</div>
 </body>
 <style>
 
@@ -94,14 +145,21 @@
 		padding: 20px;
 		font-family: Verdana;
 	}
+	.xcontainer {
+
+	}
 
 	logo {
 		font-size: 20px;
 		color: #ffffff;
-		padding: 30px;
-		margin-top: 60px;
+	  margin: 30px;
 		display: block;
 		text-align: right;
+		position: fixed;
+		left: 20px;
+		bottom: 50px;
+		z-index: 0
+
 	}
 
 	#area {
@@ -112,15 +170,98 @@
 		padding-top: 50px;
 	}
 
+	.chattext-wrapper {
+		position: absolute;
+		bottom: 0px;
+		right: 0px;
+		left: 0px;
+		z-index: 2;
+	}
+
+	#feed {
+		overflow: auto;
+		height: 220px;
+		background: white;
+		border-radius: 5px 5px 0px 0px;
+		border: 1px solid #d3d8d8;
+		padding: 10px;
+		display: relative;
+	}
+
+	#feed li {
+		margin: 5px;
+		list-style-type: none;
+		background: #7db0e4;
+		border-radius: 5px;
+		padding: 2px 10px 2px 10px;
+		display: inline-block;
+	}
+
+/*	#feed li::after {
+    content: "";
+    position: absolute;
+    border-style: solid;
+		border-width: 6px 10px 6px 0;
+		border-color: #7db0e4;
+		display: block;
+		width: 0;
+		z-index: 1;
+		left: -10px;
+		top: 15px;
+	}*/
+
 	.chatbox {
-		width: 300px;
-		border: 1px solid black;
+		width: 400px;
 		position: fixed;
 		bottom: 30px;
 		right: 30px;
-		min-height: 100px;
+		height: 250px;
+		/*position: relative;*/
+		/*background: rgba(0,0,0,0.4);*/
 	}
 
+	.btn-file {
+	    position: relative;
+	    overflow: hidden;
+	}
+
+	#file {
+	    position: absolute;
+	    top: 0;
+	    right: 0;
+	    min-width: 100%;
+	    min-height: 100%;
+	    font-size: 100px;
+	    text-align: right;
+	    filter: alpha(opacity=0);
+	    opacity: 0;
+	    outline: none;
+	    background: white;
+	    cursor: inherit;
+	    display: block;
+	}
+
+	.file-box {
+		position: fixed;
+		left: 20px;
+		bottom: 30px;
+	}
+
+	form {
+		display: inline-block;
+	}
+
+	a:link { color: black; }
+	a:visited { color: black; }
+	a:link { color: black; }
+	a:active { color: black; }
+
+	progress {
+		width: 100%;
+		position: fixed;
+		top: 0px;
+		left: 0px;
+	}
 
 </style>
 </html>
