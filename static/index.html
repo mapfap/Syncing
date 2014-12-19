@@ -20,7 +20,7 @@
 			
 			if (type == "a") {
 				var filename = JSON.parse(msg)
-				$("#feed").append("<li><span class='glyphicon glyphicon-link'> </span> <a href='" + filename.new + "'>" + filename.old + "</a></li><br>");
+				$("#feed").append("<li><span class='glyphicon glyphicon-link'> </span> <a target='_blank' href='" + filename.new + "'>" + filename.old + "</a></li><br>");
 			} else {
 				$("#feed").append("<li>" + msg + "</li><br>");
 			}
